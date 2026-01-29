@@ -144,3 +144,223 @@ class TestMarkdownParse(unittest.TestCase):
             ],
             result,
         )
+    
+    def test_markdown_to_blocks(self):
+        md = """
+This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
+
+    def test_malformed_markdown_to_blocks(self):
+        md = """
+This is **bolded** paragraph
+
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+
+
+
+
+- This is a list
+- with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
+
+
+    def test_block_heading(self):
+        md = """
+# Heading 1
+
+## Heading 2
+
+### Heading 3
+
+#### Heading 4
+
+##### Heading 5
+
+###### Heading 6
+"""
+        blocks = markdown_to_blocks(md)
+        for block in blocks:
+            self.assertEqual(BlockType.HEADING, block_to_block_type(block))
+
+    def test_block_code(self):
+        md = """
+```
+This is a disaster! Utter disaster of code block text
+```
+
+```
+And yet here we are! ()
+# With some code blocks, yes we are!
+```
+"""
+        blocks = markdown_to_blocks(md)
+        for block in blocks:
+            self.assertEqual(BlockType.CODE, block_to_block_type(block))
+
+    def test_block_quote(self):
+        md = """
+> All's well with the world, but not here
+
+> When you want a duck
+>You gotta cook it yourself!
+
+>#Sometimes, there's
+>just a lot of fluff
+> Ya know?
+"""
+        blocks = markdown_to_blocks(md)
+        for block in blocks:
+            self.assertEqual(BlockType.QUOTE, block_to_block_type(block))
+
+    def test_block_unordered_list(self):
+        md = """
+- Why only have a list with one item? Because!
+
+- When you want a duck
+- You gotta cook it yourself!
+
+- #Sometimes, there's
+- just a lot of fluff
+- Ya know?
+"""
+        blocks = markdown_to_blocks(md)
+        for block in blocks:
+            self.assertEqual(BlockType.UNORDERED_LIST, block_to_block_type(block))
+
+    def test_block_ordered_list(self):
+        md = """
+1. Why only have a list with one item? Because!
+
+1. When you want a duck
+2. You gotta cook it yourself!
+
+1. #Sometimes, there's
+2. just a lot of fluff
+3. Ya know?
+"""
+        blocks = markdown_to_blocks(md)
+        for block in blocks:
+            self.assertEqual(BlockType.ORDERED_LIST, block_to_block_type(block))
+
+    def test_block_plain_text(self):
+        md = """
+#This is a malformed heading
+
+####### Another malformed heading with tooo many #
+
+```
+Ooops! Someone forgot to end this code block!
+
+2. Why only have a list with one item? Because! This list is malformed
+
+1. When you want a duck
+3. You gotta cook it yourself!
+
+1. #Sometimes, there's
+2. just a lot of fluff
+4. Ya know?
+
+-Lists need a space between the dash, this one isn't
+-Even though it looks like a list
+-It isn't a list!
+
+1. This one looks like a List
+2. It quacks like a list
+3. But in the end
+```
+"""
+        blocks = markdown_to_blocks(md)
+        for block in blocks:
+            self.assertEqual(BlockType.PARAGRAPH, block_to_block_type(block))
+    
+    def test_paragraphs(self):
+        md = """
+This is **bolded** paragraph
+text in a p
+tag here
+
+This is another paragraph with _italic_ text and `code` here
+
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><p>This is <b>bolded</b> paragraph text in a p tag here</p><p>This is another paragraph with <i>italic</i> text and <code>code</code> here</p></div>",
+        )
+
+    def test_codeblock(self):
+        md = """
+```
+This is text that _should_ remain
+the **same** even with inline stuff
+```
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
+        )
+    
+    def test_unordered_and_ordered_lists(self):
+        md = """
+1. This is an **ordered** List
+2. With several items
+
+- This is an unordered list
+- With _several_ items
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><ol><li>This is an <b>ordered</b> List</li><li>With several items</li></ol><ul><li>This is an unordered list</li><li>With <i>several</i> items</li></ul></div>",
+        )
+    
+    def test_quotes_and_headlines(self):
+        md = """
+# Heading 1
+## Heading 2
+
+> This is a multiline
+> quote. _Please_ treat
+> accordingly.
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            "<div><h1>Heading 1</h1><h2>Heading 2</h2><quote>This is a multiline quote. <i>Please</i> treat accordingly.</quote></div>",
+        )

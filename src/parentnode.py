@@ -8,7 +8,7 @@ class ParentNode(HTMLNode):
         if self.tag == None:
             raise ValueError("Parent nodes need a tag")
         if self.children == None:
-            raise ValueError("Parent nodes need at least one child")
+            raise ValueError(f"{self.tag} Parent nodes need at least one child")
         opening_tag_values = []
         tag = f"<{self.tag}>"
         if self.props != None:
