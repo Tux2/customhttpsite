@@ -107,6 +107,19 @@ class TestMarkdownParse(unittest.TestCase):
             ],
             new_nodes,
         )
+
+    def only_links(self):
+        node = TextNode(
+            "[link](https://i.imgur.com/zjjcJKZ.png)",
+            TextType.PLAIN,
+        )
+        new_nodes = split_nodes_link([node])
+        self.assertListEqual(
+            [
+                TextNode("link", TextType.LINK, "https://i.imgur.com/zjjcJKZ.png"),
+            ],
+            new_nodes,
+        )
     
     def test_split_images_and_links(self):
         node = TextNode(
@@ -363,4 +376,54 @@ the **same** even with inline stuff
         self.assertEqual(
             html,
             "<div><h1>Heading 1</h1><h2>Heading 2</h2><quote>This is a multiline quote. <i>Please</i> treat accordingly.</quote></div>",
+        )
+
+    def test_extract_title(self):
+        md = """
+# Heading 1
+## Heading 2
+
+> This is a multiline
+> quote. _Please_ treat
+> accordingly.
+"""
+
+        node = extract_title(md)
+        self.assertEqual(
+            node,
+            "Heading 1",
+        )
+
+    def test_extract_title_2(self):
+        md = """
+## Heading 2
+# Heading 1
+
+> This is a multiline
+> quote. _Please_ treat
+> accordingly.
+"""
+
+        node = extract_title(md)
+        self.assertEqual(
+            node,
+            "Heading 1",
+        )
+
+    def test_extract_title_3(self):
+        md = """
+## Heading 2
+## Heading 2
+
+# Let Us Do This
+
+> This is a multiline
+> quote. _Please_ treat
+> accordingly.
+"""
+
+        node = extract_title(md)
+        self.assertEqual(
+            node,
+            "Let Us Do This",
         )

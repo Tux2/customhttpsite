@@ -40,11 +40,11 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
     return new_nodes
 
 def extract_markdown_images(text):
-    matches = re.findall(r"!\[([^\]]+)\]\((http[s]?:\/\/[a-zA-Z0-9\.\/]+)\)", text)
+    matches = re.findall(r"!\[([^\]]+)\]\(([a-zA-Z0-9:\-\.\/]+)\)", text)
     return matches
 
 def extract_markdown_links(text):
-    matches = re.findall(r"(?<!!)\[([^\]]+)\]\((http[s]?:\/\/[a-zA-Z0-9\.\/]+)\)",  text)
+    matches = re.findall(r"(?<!!)\[([^\]]+)\]\(([a-zA-Z0-9:\-\.\/]+)\)",  text)
     return matches
 
 def split_nodes_image(old_nodes):
@@ -192,7 +192,7 @@ def markdown_to_html_node(text):
             t_nodes = text_to_textnodes(combined_lines)
             for text_node in t_nodes:
                 quote_nodes.append(text_node_to_html_node(text_node))
-            block_array.append(ParentNode("quote", quote_nodes))
+            block_array.append(ParentNode("blockquote", quote_nodes))
         elif type == BlockType.UNORDERED_LIST:
             list_items = []
             lines = block.split("\n")
@@ -216,4 +216,12 @@ def markdown_to_html_node(text):
     return ParentNode("div", block_array)
 
 
-
+def extract_title(markdown):
+    blocks = markdown_to_blocks(markdown)
+    for block in blocks:
+        if block_to_block_type(block) == BlockType.HEADING:
+            lines = block.split("\n")
+            for line in lines:
+                if line.startswith("# "):
+                    return line[2::].strip()
+    raise Exception("Unable to find title")
